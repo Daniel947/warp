@@ -2460,6 +2460,9 @@ impl From<warp_graphql::queries::get_feature_model_choices::LlmProvider> for LLM
                 LLMProvider::Unknown
             }
             warp_graphql::queries::get_feature_model_choices::LlmProvider::Other(value) => {
+                if value.eq_ignore_ascii_case("github") {
+                    return LLMProvider::Github;
+                }
                 report_error!(anyhow!(
                     "Invalid LlmProvider '{value}'. Make sure to update client GraphQL types!"
                 ));
@@ -2478,6 +2481,9 @@ impl From<warp_graphql::workspace::LlmProvider> for LLMProvider {
             warp_graphql::workspace::LlmProvider::Xai => LLMProvider::Xai,
             warp_graphql::workspace::LlmProvider::Unknown => LLMProvider::Unknown,
             warp_graphql::workspace::LlmProvider::Other(value) => {
+                if value.eq_ignore_ascii_case("github") {
+                    return LLMProvider::Github;
+                }
                 report_error!(anyhow!(
                     "Invalid LlmProvider '{value}'. Make sure to update client GraphQL types!"
                 ));

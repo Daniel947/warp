@@ -6310,6 +6310,7 @@ struct ApiKeysWidget {
     openai_api_key_editor: ViewHandle<EditorView>,
     anthropic_api_key_editor: ViewHandle<EditorView>,
     google_api_key_editor: ViewHandle<EditorView>,
+    github_api_key_editor: ViewHandle<EditorView>,
 
     can_use_warp_credits_with_byok: SwitchStateHandle,
     upgrade_highlight_index: HighlightedHyperlink,
@@ -6326,6 +6327,7 @@ impl ApiKeysWidget {
             openai: openai_key,
             anthropic: anthropic_key,
             google: google_key,
+            github: github_key,
             ..
         } = ApiKeyManager::as_ref(ctx).keys().clone();
 
@@ -6414,10 +6416,18 @@ impl ApiKeysWidget {
             "AIzaSy..."
         );
 
+        create_api_key_editor!(
+            github_api_key_editor,
+            github_key,
+            set_github_key,
+            "ghp_..."
+        );
+
         Self {
             openai_api_key_editor,
             anthropic_api_key_editor,
             google_api_key_editor,
+            github_api_key_editor,
 
             can_use_warp_credits_with_byok: Default::default(),
             upgrade_highlight_index: Default::default(),
@@ -6504,6 +6514,13 @@ impl ApiKeysWidget {
             appearance,
             "Google API Key",
             self.google_api_key_editor.clone(),
+            is_enabled,
+            app,
+        ));
+        column.add_child(render_api_key_input(
+            appearance,
+            "GitHub Personal Access Token",
+            self.github_api_key_editor.clone(),
             is_enabled,
             app,
         ));
@@ -6603,7 +6620,7 @@ impl SettingsWidget for ApiKeysWidget {
     type View = AISettingsPageView;
 
     fn search_terms(&self) -> &str {
-        "api keys bring your own byo openai anthropic google claude gemini gpt"
+        "api keys bring your own byo openai anthropic google github claude gemini gpt"
     }
 
     fn render(

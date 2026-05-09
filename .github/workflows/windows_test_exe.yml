@@ -1,0 +1,84 @@
+name: Build Windows Test Exe
+
+on:
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: Release channel to build
+        required: true
+        type: choice
+        default: dev
+        options:
+          - dev
+          - preview
+          - stable
+          - oss
+      arch:
+        description: Windows architecture to build
+        required: true
+        type: choice
+        default: x64
+        options:
+          - x64
+          - arm64
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build_windows_exe:
+    name: Build Windows ${{ inputs.arch }} installer
+    runs-on: windows-latest-large
+    timeout-minutes: 150
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Prepare build environment
+        uses: ./.github/actions/prepare_environment
+        with:
+          target_os: windows
+          is_self_hosted: false
+          install_release_deps: true
+
+      - name: Add Windows target
+        shell: bash
+        run: |
+          if [[ "${{ inputs.arch }}" == "arm64" ]]; then
+            rustup target add aarch64-pc-windows-msvc
+          else
+            rustup target add x86_64-pc-windows-msvc
+          fi
+
+      - name: Install Inno Setup Compiler
+        shell: pwsh
+        run: choco install innosetup -y --no-progress
+
+      - name: Verify Inno Setup Compiler is available
+        shell: pwsh
+        run: |
+          $iscc = Get-Command ISCC -ErrorAction SilentlyContinue
+          if (-not $iscc) {
+            throw 'ISCC was not found after installing Inno Setup.'
+          }
+          Write-Host "Using ISCC at $($iscc.Source)"
+
+      - name: Build Windows installer
+        id: bundle_app
+        shell: bash
+        run: |
+          script/bundle --channel "${{ inputs.channel }}" --arch "${{ inputs.arch }}"
+        env:
+          GIT_RELEASE_TAG: test-${{ github.sha }}
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: warp-windows-${{ inputs.channel }}-${{ inputs.arch }}-installer
+          path: ${{ steps.bundle_app.outputs.installer_path }}
+
+      - name: Upload app binary artifact
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: warp-windows-${{ inputs.channel }}-${{ inputs.arch }}-binary
+          path: ${{ steps.bundle_app.outputs.binary_path }}

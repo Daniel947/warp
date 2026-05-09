@@ -122,3 +122,23 @@ fn llm_info_round_trip_serializes_and_deserializes() {
 
     assert_eq!(info, round_tripped);
 }
+
+#[test]
+fn llm_provider_maps_github_from_graphql_other_variant() {
+    let provider = LLMProvider::from(
+        warp_graphql::queries::get_feature_model_choices::LlmProvider::Other(
+            "github".to_string(),
+        ),
+    );
+
+    assert_eq!(provider, LLMProvider::Github);
+}
+
+#[test]
+fn llm_provider_maps_github_from_workspace_other_variant() {
+    let provider = LLMProvider::from(warp_graphql::workspace::LlmProvider::Other(
+        "Github".to_string(),
+    ));
+
+    assert_eq!(provider, LLMProvider::Github);
+}

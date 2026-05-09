@@ -22,6 +22,7 @@ pub struct ApiKeys {
     pub anthropic: Option<String>,
     pub openai: Option<String>,
     pub open_router: Option<String>,
+    pub github: Option<String>,
 }
 
 impl ApiKeys {
@@ -30,6 +31,7 @@ impl ApiKeys {
             || self.anthropic.is_some()
             || self.google.is_some()
             || self.open_router.is_some()
+            || self.github.is_some()
     }
 }
 
@@ -93,6 +95,12 @@ impl ApiKeyManager {
         self.write_keys_to_secure_storage(ctx);
     }
 
+    pub fn set_github_key(&mut self, key: Option<String>, ctx: &mut ModelContext<Self>) {
+        self.keys.github = key;
+        ctx.emit(ApiKeyManagerEvent::KeysUpdated);
+        self.write_keys_to_secure_storage(ctx);
+    }
+
     pub fn set_aws_credentials_state(
         &mut self,
         state: AwsCredentialsState,
@@ -138,6 +146,10 @@ impl ApiKeyManager {
             .then(|| self.keys.open_router.clone())
             .flatten()
             .unwrap_or_default();
+        let github = include_byo_keys
+            .then(|| self.keys.github.clone())
+            .flatten()
+            .unwrap_or_default();
         // Also include credentials when running with OIDC-managed Bedrock inference, regardless
         // of the per-user setting flag (which only applies to the local credential chain path).
         let include_aws = include_aws_bedrock_credentials
@@ -158,6 +170,7 @@ impl ApiKeyManager {
             && openai.is_empty()
             && google.is_empty()
             && open_router.is_empty()
+            && github.is_empty()
             && aws_credentials.is_none()
         {
             None
@@ -167,6 +180,7 @@ impl ApiKeyManager {
                 openai,
                 google,
                 open_router,
+                github,
                 allow_use_of_warp_credits: false,
                 aws_credentials,
             })
